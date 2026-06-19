@@ -36,3 +36,27 @@ Host: `spark-4185` · NVIDIA **GB10** · 128GB unified · sm_121 · driver 580.1
 ## หมายเหตุ insight ที่ได้ระหว่างทาง (ตรงกับเอกสารคอร์ส)
 - vLLM blog (DGX Spark) แนะนำ **`--max-num-seqs 4`** สำหรับ 120B — "เกิน 4 concurrent decode บน Spark bandwidth tax กินกำไร batching" + pre-warm JIT (~25s) → ยืนยันเรื่องคอขวด bandwidth/คิว
 - NVFP4 ตรวจจับได้จริงบน cu130 (`Detected ModelOpt NVFP4 checkpoint`) — แค่ติด warmup hang ของ community image
+
+## ✅ LAB 5 (Secure & Sandbox / OpenShell) — VALIDATED LIVE บน DGX Spark
+รันจริงครบ 7 step ด้วย **OpenShell v0.0.66 (binary official, checksum ✅)** + gateway บน **Docker Compose แบบ non-root**:
+
+| step | ผล |
+|---|---|
+| สร้าง sandbox (default-deny) | ✅ created |
+| `curl https://api.github.com/zen` | ❌ **403 blocked** (default-deny) |
+| `openshell policy set ... policy.yaml --wait` | ✅ Policy v2 loaded |
+| GET zen / octocat | ✅ **ผ่าน** (ได้ "Speak like a human." + octocat ASCII จริง) |
+| `curl -X POST .../issues` | ❌ **L7 blocked**: `{"error":"policy_denied","detail":"POST ... not permitted by policy","layer":"l7"}` |
+
+→ เสา Secure ทำงานครบวงจรจริง: **deny-by-default → policy authoring → GET ผ่าน/POST บล็อกที่ชั้น HTTP method → audit**
+
+### Recipe ที่ใช้ได้จริง (สำหรับผู้สอนเตรียม gateway แบบ non-root)
+1. ติดตั้ง binary จาก official .deb (v0.0.66) — verify checksum; หรือ `OpenShell/install.sh` (ต้อง sudo)
+2. Gateway ผ่าน `deploy/docker/docker compose up -d` + แก้ 4 จุด (สำหรับ Linux/DGX Spark):
+   - `extra_hosts: host.docker.internal/host.openshell.internal: host-gateway`
+   - `[openshell.gateway.gateway_jwt]` ชี้ signing material จาก `openshell-gateway generate-certs --output-dir jwt` (mount `jwt/jwt` → `/etc/openshell/jwt`), `ttl_secs=0`
+   - `[openshell.gateway.auth] allow_unauthenticated_users = true` (local dev เท่านั้น)
+   - publish gateway บน `0.0.0.0:8080` (ไม่ใช่ 127.0.0.1) เพื่อให้ sandbox container callback ถึง
+3. `openshell gateway add http://localhost:8080` → `openshell status` = Connected
+4. รัน `examples/sandbox-policy-quickstart/demo.sh` (หมายเหตุ: demo มี `set -e` + `grep` บน log ว่าง อาจ exit ก่อน — ปลด `-e` เพื่อรันครบ 7 step)
+- ⚠️ การตั้ง 4 จุดข้างบนเป็น **local single-player/dev** — production ใช้ OIDC/mTLS + TLS ตาม docs
