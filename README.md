@@ -5,6 +5,8 @@
 
 > แกนคอร์ส: **"Agent = Model + Harness"** → เช้าปูพื้นฐาน NVIDIA AI Stack, บ่ายลงมือ 3 เสาหลัก **Optimize Tokens / Harnessing / Secure & Sandbox**, ปิดท้าย GTC Taipei 2026 recap + ของแจก + certificate
 
+> 🔗 **Repo:** https://github.com/spped2000/dgx-spark-ai-nvidia-101 · 🧪 **ทดสอบ live บน DGX Spark จริง (`spark-4185`, GB10) แล้ว:** dry-run 30 คน (Ollama + vLLM NGC) · LAB 5 OpenShell ครบวงจร · Phoenix observability (ดูสรุปด้านล่าง)
+
 ---
 
 ## 📁 สารบัญไฟล์ (Contents)
@@ -20,6 +22,9 @@
 | [runbook.md](runbook.md) | Facilitator runbook นาทีต่อนาที + failure recovery |
 | [infra-setup-checklist.md](infra-setup-checklist.md) | เตรียมเครื่อง/โมเดล/เครือข่าย + 🔒 dry-run hard gate |
 | [logistics.md](logistics.md) | อีเมลก่อนเรียน, GTC recap, certificate, giveaway, marketing |
+| [labs/LAB5-policy-guide.md](labs/LAB5-policy-guide.md) | OpenShell policy & rules: `set` vs `update`, presets, L7 allow/deny + เดโมเพิ่มกฎสด |
+| [slides/](slides/) | **deck.pptx (76 สไลด์)** + deck.md (Marp) + slides.json + build_pptx.py |
+| [tools/](tools/) | sim_30_learners.py (load test) · dryrun-report*.md (ผลจริง) · run_dryrun.sh · **observability.md** · phoenix_*.py (live demos) |
 
 **ลำดับอ่านแนะนำสำหรับผู้สอน:** README → agenda → runbook → labs (1→5) → infra-setup-checklist → logistics
 
@@ -37,9 +42,12 @@
 ---
 
 ## 🧪 ผล Dry-run จริงบน DGX Spark (วัด 2026-06-19) — ดู [tools/dryrun-report.md](tools/dryrun-report.md)
-- ✅ **30 คนพร้อมกันบนเครื่องเดียวได้จริง (30/30, ไม่ OOM)** — เสิร์ฟ NVIDIA `nemotron-mini` (4B) ผ่าน Ollama, วัดด้วย [tools/sim_30_learners.py](tools/sim_30_learners.py)
-- ตัวเลข: aggregate ~80 tok/s · per-user ~81 tok/s · **TTFT คนท้ายๆ ~40 วินาที** (default parallelism ต่ำ → เกิดคิว) = ยืนยันบทเรียน "ต้องทำ continuous batching / เพิ่ม parallelism"
-- ⚠️ **Finding:** `vllm/vllm-openai` (community image, cu12 + cu130-nightly) **แฮงก์ที่ warmup บน GB10/sm_121 ทุก config** (FlashInfer/FlashAttn/Triton) → serving stack วันงานให้ใช้ **NGC official `nvcr.io/nvidia/vllm`** หรือ **Ollama/LM Studio** (ยืนยันรันได้) + วัดใหม่ใน dry-run เสมอ
+- ✅ **30 คนพร้อมกันบนเครื่องเดียวได้จริง (30/30, ไม่ OOM)** — วัดด้วย [tools/sim_30_learners.py](tools/sim_30_learners.py)
+  - **Ollama** (nemotron-mini 4B): aggregate ~80 tok/s · TTFT คนท้ายๆ ~40s (parallelism ต่ำ → เกิดคิว = บทเรียน)
+  - **vLLM NGC official** (`nvcr.io/nvidia/vllm`, Nemotron-Nano-8B): **~206 tok/s aggregate** (continuous batching จริง) · TTFT p50 0.22s · GPU 70.6GB → ยืนยัน "vLLM = workhorse"
+- ✅ **LAB 5 OpenShell** validated live ครบ 7 step (curl 403 → policy → GET ผ่าน/POST บล็อก L7) + **เพิ่มกฎสด** (`policy update --add-allow` → POST บล็อก→ผ่าน ไม่ต้อง restart)
+- ✅ **Phoenix observability** + GTC-style agent trace (tool โดน sandbox บล็อก) + live demo พิมพ์สด → [tools/observability.md](tools/observability.md)
+- ⚠️ **Finding:** `vllm/vllm-openai` (community image) **แฮงก์ที่ warmup บน GB10/sm_121** → ใช้ **NGC official build** (ทดสอบแล้วผ่าน) หรือ Ollama/LM Studio + วัดใหม่ใน dry-run เสมอ
 
 ## ✅ ข้อเท็จจริงหลัก (Verified quick-reference)
 - **DGX Spark** = GB10 (Grace + Blackwell), **128GB LPDDR5x unified @ ~273 GB/s**, sm_121, FP8/NVFP4 native, **ไม่มี MIG** → คอขวด = memory bandwidth
