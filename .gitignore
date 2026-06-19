@@ -1,0 +1,32 @@
+# secrets / env  (NB: keep patterns specific — avoid catching "optimize-tokens" lab)
+.env
+.env.*
+*.key
+*.token
+*_token
+ngc_*
+ghtoken
+gh.token
+**/secrets/
+# HF token file (provided locally — NEVER commit)
+hf
+hf_token
+*.hftoken
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.uv/
+
+# logs / scratch
+*.log
+*.tmp
+.DS_Store
+.~lock.*#
+
+# safety: never commit GTC reference material (NVIDIA decks / CONFIDENTIAL)
+ref_nvidia_gtc/
+ref_nvidia_gtc_pdf/
+*.webp
+*.pdf
