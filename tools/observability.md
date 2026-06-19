@@ -21,7 +21,16 @@ openshell term            # หรือ: openshell term --theme dark
 # รัน Phoenix
 docker run -d --name phoenix -p 6006:6006 -p 4317:4317 arizephoenix/phoenix:latest
 # ส่ง trace จาก endpoint จริง (instrument OpenAI client → Phoenix)
-uv run tools/phoenix_trace_demo.py        # ดู course/tools/phoenix_trace_demo.py
+uv run tools/phoenix_trace_demo.py        # LLM tracing ล้วน
+```
+
+### GTC-style "Agent Insights" (agent + sandbox tools → Phoenix)
+`tools/phoenix_agent_demo.py` — agent (สมอง = vLLM/Ollama Nemotron) ที่มี shell tool รัน **ใน OpenShell sandbox** → Phoenix เห็น trace `agent-turn` ที่มี tool-call โดน sandbox บล็อก (เหมือนรูป GTC):
+```bash
+PATH=/tmp/osx/extracted/usr/bin:$PATH \
+  BASE_URL=http://localhost:8000/v1 MODEL=nemotron-nano \
+  uv run tools/phoenix_agent_demo.py
+# Phoenix → project 'dgx-spark-course-agent' → trace: llm + tool(GET allowed) + tool(POST blocked) + reflect
 ```
 - เปิด **http://localhost:6006** → โปรเจกต์ `dgx-spark-course`
 - เห็นแต่ละ request: prompt/completion/total tokens, latency, model

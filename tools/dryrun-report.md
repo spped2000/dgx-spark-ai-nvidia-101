@@ -29,7 +29,7 @@ Host: `spark-4185` · NVIDIA **GB10** · 128GB unified · sm_121 · driver 580.1
 → **สรุป:** ไม่ใช่ปัญหา attention backend — เป็น vLLM community image รัน forward pass แรกบน GB10/sm_121 ไม่ผ่าน (ขณะที่ **Ollama รันได้** เพราะใช้ llama.cpp คนละ code path)
 
 ### ✅ คำแนะนำสำหรับ serving stack วันงาน
-1. ใช้ **NVIDIA NGC official build** `nvcr.io/nvidia/vllm:<ver>` (ตาม [build.nvidia.com/spark/vllm](https://build.nvidia.com/spark/vllm) — anonymously pullable) ซึ่ง build เฉพาะ DGX Spark — *ยังไม่ได้ทดสอบในรอบนี้ ควรลองใน dry-run จริง*
+1. ✅ **NVIDIA NGC official build `nvcr.io/nvidia/vllm:26.05.post1-py3` — ทดสอบแล้ว ผ่าน!** healthy ~6 นาที (ไม่แฮงก์), 30/30, **~206 tok/s aggregate** (continuous batching จริง vs Ollama ~80), per-user ~14 tok/s, TTFT p50 0.22s, GPU 70.6GB ไม่ OOM (ดู `dryrun-report-ngc.md`) → **ใช้ NGC build ไม่ใช่ community image**
 2. หรือใช้ **Ollama / LM Studio** (ยืนยันแล้วว่ารันบน GB10 ได้) เป็น serving path สำหรับมือใหม่
 3. **Gate:** ยืนยัน build vLLM ที่จะใช้จริง + วัดตัวเลขใหม่ ใน dry-run ก่อนวันงานเสมอ
 
@@ -60,3 +60,9 @@ Host: `spark-4185` · NVIDIA **GB10** · 128GB unified · sm_121 · driver 580.1
 3. `openshell gateway add http://localhost:8080` → `openshell status` = Connected
 4. รัน `examples/sandbox-policy-quickstart/demo.sh` (หมายเหตุ: demo มี `set -e` + `grep` บน log ว่าง อาจ exit ก่อน — ปลด `-e` เพื่อรันครบ 7 step)
 - ⚠️ การตั้ง 4 จุดข้างบนเป็น **local single-player/dev** — production ใช้ OIDC/mTLS + TLS ตาม docs
+
+## ✅ GTC "Agent Insights" — reproduced LIVE บน DGX Spark (vLLM + OpenShell + Phoenix)
+รัน `tools/phoenix_agent_demo.py`: agent (สมอง = **Nemotron บน vLLM NGC :8000**) + shell tool รัน **ใน OpenShell sandbox** → trace เข้า **Phoenix** (project `dgx-spark-course-agent`):
+- `agent-turn` → `[llm plan]` → `[tool GET zen → 200 ALLOWED]` → `[tool POST issue → policy_denied BLOCKED L7]` → `[llm reflect]`
+- LLM สรุปเอง: *"POST ... blocked by the sandbox's egress policy ... read-only only"* = บรรทัด **"sandbox restricted egress"** แบบรูป GTC เป๊ะ
+→ ครบ stack 3 ชั้น: **vLLM (serve) + OpenShell (sandbox/policy enforcement) + Phoenix (agent observability)** — ทดสอบรันจริงทั้งหมดบน `spark-4185` (GB10)
