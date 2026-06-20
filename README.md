@@ -8,6 +8,7 @@
 > 🔗 **Repo:** https://github.com/spped2000/dgx-spark-ai-nvidia-101 · 🧪 **ทดสอบ live บน DGX Spark จริง (`spark-4185`, GB10) แล้ว:** dry-run 30 คน (Ollama + vLLM NGC) · LAB 5 OpenShell ครบวงจร · Phoenix observability (ดูสรุปด้านล่าง)
 
 > 📘 **เริ่มที่นี่ → [LABS-GUIDE.md](LABS-GUIDE.md)** — วิธีเข้าใช้งาน + ทุก lab (เอาไว้ทำอะไร · tools · model · flow · scenario · วิธีเรียกใช้) รวมในที่เดียว
+> 👩‍🏫 **ผู้สอน → [INSTRUCTOR-GUIDE.md](INSTRUCTOR-GUIDE.md)** — สอนยังไงต่อ lab (เตรียม · พูด/ทำ · จอที่ฉาย · คำถามที่มักเจอ · ถ้าพัง · เวลา) + master checklist ก่อนวันงาน
 
 ---
 
