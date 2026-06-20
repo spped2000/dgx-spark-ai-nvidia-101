@@ -1,68 +1,13 @@
-# DGX Spark — Dry-run results & findings (2026-06-19)
-Host: `spark-4185` · NVIDIA **GB10** · 128GB unified · sm_121 · driver 580.142 / CUDA 13.0
+# Dry-run report — 2026-06-20 07:32 +07
 
-## ✅ VALIDATED: 30 concurrent learners on ONE DGX Spark (via Ollama)
-- **Serving**: NVIDIA **`nemotron-mini`** (Nemotron 4B) on **Ollama**, OpenAI-compatible `:11434/v1`
-- **Load test**: `sim_30_learners.py`, 30 concurrent users × 2 bursts (max_tokens 128)
+- **Endpoint**: `http://localhost:8000/v1`
+- **Model**: `nemotron-nano`
+- **Users (concurrent)**: 30 · **max_tokens**: 128
+- **Host**: `spark-4185` (NVIDIA GB10, 128GB unified)
 
-| scenario | ok/fail | wall | aggregate tok/s | per-user tok/s (p50/p95) | TTFT p50/p95 |
-|---|---|---|---|---|---|
-| BURST ×30 (3-2-1 พร้อมกัน) | **30/0** | 41.5s | ~79.5 | 81.2 / 82.5 | **22.1s / 39.4s** |
-| BURST ×30 รอบ 2 (cache warm) | **30/0** | 38.8s | ~79.7 | 81.4 / 82.7 | 18.8s / 36.3s |
+| scenario | ok/fail | wall (s) | aggregate tok/s | per-user tok/s (p50/p95/min) | TTFT p50/p95 (s) | GPU peak (GiB) |
+|---|---|---|---|---|---|---|
+| BURST x30 (3-2-1 พร้อมกัน) | 30/0 | 18.4 | 208.8 | 14.3/14.4/14.1 | 0.28/9.37 | 72.1 |
+| BURST x30 รอบ 2 (cache warm) | 30/0 | 18.2 | 210.9 | 14.3/14.5/14.3 | 0.19/9.33 | 72.1 |
 
-**ไม่ OOM** (โมเดล 4B ~3.4GB บน 121GB). รายงานดิบ: [`dryrun-report-ollama.md`](dryrun-report-ollama.md)
-
-### 🔑 Insight (ใส่ลงคอร์ส)
-- เครื่องเดียว **เสิร์ฟ 30 คนพร้อมกันได้จริง (30/30)** — แต่ Ollama default parallelism ต่ำ → **เกิดคิว: คนท้ายๆ รอ ~40 วินาที** กว่าจะได้ token แรก (TTFT) ขณะที่ per-user throughput ~81 tok/s (≈ serialize)
-- ตรงกับที่คอร์สสอน: *"30 คนยิงพร้อมกันบนเครื่องเดียว = ต้องมี continuous batching / เพิ่ม parallelism ไม่งั้นเกิดคิว"* → ปรับ `OLLAMA_NUM_PARALLEL` ให้สูงขึ้น หรือใช้ vLLM continuous batching, cap `max_tokens`, right-size โมเดล
-
-## ⚠️ FINDING: generic `vllm/vllm-openai` image แฮงก์บน GB10 (sm_121)
-ลอง 4 config — **ทุกตัวแฮงก์ที่ warmup forward pass แรก** (weights โหลดขึ้น GPU แล้ว 15–70GB แต่ log นิ่งหลังเลือก attention backend, ไม่ขึ้น healthy):
-
-| # | image | model | backend | ผล |
-|---|---|---|---|---|
-| 1 | `vllm/vllm-openai:v0.12.0` (CUDA 12.x) | Llama-Nemotron-Nano-8B | FlashInfer | hang (ไม่มี kernel sm_121) |
-| 2 | `vllm/vllm-openai:cu130-nightly` | Nemotron-3-Super-120B-A12B-**NVFP4** | FlashInfer | hang หลัง "Using FLASHINFER" (NVFP4 detect OK) |
-| 3 | `cu130-nightly` | Llama-Nemotron-Nano-8B | FlashAttention v2 | hang (FA2 ไม่รองรับ Blackwell sm_121) |
-| 4 | `cu130-nightly` | Llama-Nemotron-Nano-8B | **TRITON_ATTN** + enforce-eager | hang เช่นกัน |
-
-→ **สรุป:** ไม่ใช่ปัญหา attention backend — เป็น vLLM community image รัน forward pass แรกบน GB10/sm_121 ไม่ผ่าน (ขณะที่ **Ollama รันได้** เพราะใช้ llama.cpp คนละ code path)
-
-### ✅ คำแนะนำสำหรับ serving stack วันงาน
-1. ✅ **NVIDIA NGC official build `nvcr.io/nvidia/vllm:26.05.post1-py3` — ทดสอบแล้ว ผ่าน!** healthy ~6 นาที (ไม่แฮงก์), 30/30, **~206 tok/s aggregate** (continuous batching จริง vs Ollama ~80), per-user ~14 tok/s, TTFT p50 0.22s, GPU 70.6GB ไม่ OOM (ดู `dryrun-report-ngc.md`) → **ใช้ NGC build ไม่ใช่ community image**
-2. หรือใช้ **Ollama / LM Studio** (ยืนยันแล้วว่ารันบน GB10 ได้) เป็น serving path สำหรับมือใหม่
-3. **Gate:** ยืนยัน build vLLM ที่จะใช้จริง + วัดตัวเลขใหม่ ใน dry-run ก่อนวันงานเสมอ
-
-## หมายเหตุ insight ที่ได้ระหว่างทาง (ตรงกับเอกสารคอร์ส)
-- vLLM blog (DGX Spark) แนะนำ **`--max-num-seqs 4`** สำหรับ 120B — "เกิน 4 concurrent decode บน Spark bandwidth tax กินกำไร batching" + pre-warm JIT (~25s) → ยืนยันเรื่องคอขวด bandwidth/คิว
-- NVFP4 ตรวจจับได้จริงบน cu130 (`Detected ModelOpt NVFP4 checkpoint`) — แค่ติด warmup hang ของ community image
-
-## ✅ LAB 5 (Secure & Sandbox / OpenShell) — VALIDATED LIVE บน DGX Spark
-รันจริงครบ 7 step ด้วย **OpenShell v0.0.66 (binary official, checksum ✅)** + gateway บน **Docker Compose แบบ non-root**:
-
-| step | ผล |
-|---|---|
-| สร้าง sandbox (default-deny) | ✅ created |
-| `curl https://api.github.com/zen` | ❌ **403 blocked** (default-deny) |
-| `openshell policy set ... policy.yaml --wait` | ✅ Policy v2 loaded |
-| GET zen / octocat | ✅ **ผ่าน** (ได้ "Speak like a human." + octocat ASCII จริง) |
-| `curl -X POST .../issues` | ❌ **L7 blocked**: `{"error":"policy_denied","detail":"POST ... not permitted by policy","layer":"l7"}` |
-
-→ เสา Secure ทำงานครบวงจรจริง: **deny-by-default → policy authoring → GET ผ่าน/POST บล็อกที่ชั้น HTTP method → audit**
-
-### Recipe ที่ใช้ได้จริง (สำหรับผู้สอนเตรียม gateway แบบ non-root)
-1. ติดตั้ง binary จาก official .deb (v0.0.66) — verify checksum; หรือ `OpenShell/install.sh` (ต้อง sudo)
-2. Gateway ผ่าน `deploy/docker/docker compose up -d` + แก้ 4 จุด (สำหรับ Linux/DGX Spark):
-   - `extra_hosts: host.docker.internal/host.openshell.internal: host-gateway`
-   - `[openshell.gateway.gateway_jwt]` ชี้ signing material จาก `openshell-gateway generate-certs --output-dir jwt` (mount `jwt/jwt` → `/etc/openshell/jwt`), `ttl_secs=0`
-   - `[openshell.gateway.auth] allow_unauthenticated_users = true` (local dev เท่านั้น)
-   - publish gateway บน `0.0.0.0:8080` (ไม่ใช่ 127.0.0.1) เพื่อให้ sandbox container callback ถึง
-3. `openshell gateway add http://localhost:8080` → `openshell status` = Connected
-4. รัน `examples/sandbox-policy-quickstart/demo.sh` (หมายเหตุ: demo มี `set -e` + `grep` บน log ว่าง อาจ exit ก่อน — ปลด `-e` เพื่อรันครบ 7 step)
-- ⚠️ การตั้ง 4 จุดข้างบนเป็น **local single-player/dev** — production ใช้ OIDC/mTLS + TLS ตาม docs
-
-## ✅ GTC "Agent Insights" — reproduced LIVE บน DGX Spark (vLLM + OpenShell + Phoenix)
-รัน `tools/phoenix_agent_demo.py`: agent (สมอง = **Nemotron บน vLLM NGC :8000**) + shell tool รัน **ใน OpenShell sandbox** → trace เข้า **Phoenix** (project `dgx-spark-course-agent`):
-- `agent-turn` → `[llm plan]` → `[tool GET zen → 200 ALLOWED]` → `[tool POST issue → policy_denied BLOCKED L7]` → `[llm reflect]`
-- LLM สรุปเอง: *"POST ... blocked by the sandbox's egress policy ... read-only only"* = บรรทัด **"sandbox restricted egress"** แบบรูป GTC เป๊ะ
-→ ครบ stack 3 ชั้น: **vLLM (serve) + OpenShell (sandbox/policy enforcement) + Phoenix (agent observability)** — ทดสอบรันจริงทั้งหมดบน `spark-4185` (GB10)
+> วัดด้วย `course/tools/sim_30_learners.py` บน DGX Spark จริง — ใช้แทนค่าประมาณในเอกสารคอร์ส

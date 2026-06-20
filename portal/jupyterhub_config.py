@@ -22,6 +22,7 @@ c.DockerSpawner.environment = {
 # mount lab notebooks (อ่านอย่างเดียว) เข้า ~/labs ของทุกคน — source = path บน HOST
 c.DockerSpawner.read_only_volumes = {
     "/home/agicafet/Documents/dgx1/course/portal/notebooks": "/home/jovyan/labs",
+    "/home/agicafet/Documents/dgx1/skills": "/home/jovyan/nvidia-skills",   # NVIDIA Agent Skills (read-only)
 }
 c.Spawner.default_url = "/lab/tree/labs/00_welcome.ipynb"
 c.Spawner.mem_limit = "2G"

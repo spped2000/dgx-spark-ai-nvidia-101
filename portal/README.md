@@ -20,7 +20,8 @@ docker compose up -d --build                                       # JupyterHub 
 - ใช้ **DummyAuthenticator**: แจกแค่ *username (student01..30)* + *รหัสรวม* (`WORKSHOP_PASSWORD`) — ใครพิมพ์ username อะไรก็ได้ container แยกตาม username
 - เปลี่ยนรหัส/หาผู้ดูแล: env `WORKSHOP_PASSWORD`, `ADMIN_TOKEN` ใน `docker-compose.yml`
 - โน้ตบุ๊ก lab: อยู่ใน `portal/notebooks/` → mount เข้า `~/labs` ของทุกคน (read-only). ✅ ผู้เรียน **รันเอง no-code (Shift+Enter)**:
-  - `00_welcome` (LAB 1 แชต) · `01_lab2_reasoning` · `02_lab3_optimize_tokens` · `03_lab4_multiagent` — ทดสอบรันผ่านหมดในแซนด์บ็อกซ์ผู้เรียน
+  - `00_welcome` (LAB 1) · `01_lab2_reasoning` (LAB 2) · `02_lab3_optimize_tokens` (LAB 3) · `03_lab4_multiagent` (LAB 4) · `05_skills_verified_agent` (LAB 6 bonus: agent + NVIDIA-verified skill) — ทดสอบรันผ่านหมด
+  - mount เสริม: `/home/jovyan/nvidia-skills` (repo NVIDIA/skills, read-only) สำหรับ LAB 6
   - `04_lab5_secure_watch` = LAB 5 **ดูผู้สอนสาธิต** (OpenShell ALPHA — ไม่แยก sandbox ต่อคน)
   - แก้/เพิ่ม lab: วาง `.ipynb` ใน `portal/notebooks/` → spawn ใหม่เห็นทันที (ไม่ต้อง rebuild)
 
