@@ -10,6 +10,25 @@
 | **Triton** (metrics) `:3001` | — | — | — | — | — | **control room**: Prometheus+Grafana dashboard "watch 30 of us" |
 \* Ollama TTFT สูงเพราะ parallelism ต่ำ (serialize) — เพิ่ม `OLLAMA_NUM_PARALLEL` ได้
 
+## 🎓 Teaching journey — แต่ละตัวโชว์อะไร + สอนยังไงให้เห็นภาพ
+3 ตัวตอบคำถามเดียวกันคนละมุม: **"เครื่องเดียวเสิร์ฟโมเดลให้ทั้งห้องยังไง?"**
+| ตัว | โชว์อะไร | คำพูด 1 ประโยค |
+|---|---|---|
+| **vLLM** | **SCALE** (continuous batching) | "1 GPU รับ 30 คน เพราะ batch รวมกัน" |
+| **NIM** | **EASY/PRODUCTION** (turnkey, auto-optimize) | "ปุ่มเดียว NVIDIA tune ให้ (FP8/GB10)" |
+| **Triton** | **OBSERVE/OPERATE** (metrics/dashboard/หลายโมเดล) | "ห้องควบคุม — ดูสดว่า 30 คนยิงแล้วเป็นยังไง" |
+
+**Journey (ไต่ทีละขั้น — แต่ละขั้น = 1 "อ๋อ"):**
+```
+"AI = model ที่ถูก served — เครื่องเดียวให้ทั้งห้องพร้อมกันยังไง?"
+ 1) รันให้ได้     Ollama/LM Studio → คลิก→แชต (แต่ 30 คน → คิว!)
+ 2) เสิร์ฟทั้งห้อง vLLM           → continuous batching → 30 คน ~206 tok/s ⭐
+ 3) ทำให้ง่าย     NIM            → one command, auto FP8/GB10 → ~188 tok/s
+ 4) มองเห็น/ดูแล  Triton dashboard→ Grafana requests/queue/throughput สด
+ 5) เลือกใช้      decision + "GPU เดียว = heavy server ทีละตัว"
+```
+make it **work → scale → easy → observable → choose** · ผูก morning pipeline **CUDA→TensorRT-LLM→NIM** + LAB 3 (token=เงิน) · ฉาย **Grafana :3001 ค้างไว้เป็นจอกลาง** ทุกครั้งที่ยิง sim
+
 ## เลือกตัวไหน?
 - **vLLM** — production/ยืดหยุ่น, คุม quantization/batching เอง (NVFP4 ต้อง vLLM/TRT-LLM)
 - **NIM** — เร็วสุดในการ deploy (turnkey, optimized, OpenAI-compatible) เหมาะมือใหม่/PoC — *ใช้ NGC API key + ดึงจาก nvcr.io/nim*
