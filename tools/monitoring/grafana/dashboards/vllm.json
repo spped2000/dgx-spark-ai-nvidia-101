@@ -1,0 +1,60 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "schemaVersion": 39,
+  "title": "DGX Spark — vLLM serving (watch 30 of us live)",
+  "uid": "dgx-vllm",
+  "tags": ["dgx-spark", "vllm"],
+  "time": {"from": "now-5m", "to": "now"},
+  "refresh": "2s",
+  "templating": {"list": []},
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Concurrent requests (running vs waiting/queue)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 0},
+      "fieldConfig": {"defaults": {"custom": {"fillOpacity": 20, "lineWidth": 2}}, "overrides": []},
+      "targets": [
+        {"refId": "A", "expr": "vllm:num_requests_running", "legendFormat": "running (กำลังตอบ)"},
+        {"refId": "B", "expr": "vllm:num_requests_waiting", "legendFormat": "waiting (เข้าคิว)"}
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Generation throughput (tokens/sec)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 0},
+      "fieldConfig": {"defaults": {"custom": {"fillOpacity": 20, "lineWidth": 2}, "unit": "tps"}, "overrides": []},
+      "targets": [
+        {"refId": "A", "expr": "rate(vllm:generation_tokens_total[30s])", "legendFormat": "gen tok/s"},
+        {"refId": "B", "expr": "rate(vllm:prompt_tokens_total[30s])", "legendFormat": "prompt tok/s"}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Time To First Token (p50 / p95, s)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 9},
+      "fieldConfig": {"defaults": {"custom": {"lineWidth": 2}, "unit": "s"}, "overrides": []},
+      "targets": [
+        {"refId": "A", "expr": "histogram_quantile(0.50, sum(rate(vllm:time_to_first_token_seconds_bucket[1m])) by (le))", "legendFormat": "TTFT p50"},
+        {"refId": "B", "expr": "histogram_quantile(0.95, sum(rate(vllm:time_to_first_token_seconds_bucket[1m])) by (le))", "legendFormat": "TTFT p95"}
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "GPU KV-cache usage (%)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 9},
+      "fieldConfig": {"defaults": {"custom": {"fillOpacity": 25, "lineWidth": 2}, "unit": "percentunit", "max": 1}, "overrides": []},
+      "targets": [
+        {"refId": "A", "expr": "vllm:gpu_cache_usage_perc", "legendFormat": "KV cache used"}
+      ]
+    }
+  ]
+}

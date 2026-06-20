@@ -1,0 +1,4 @@
+# JupyterHub + DockerSpawner (สำหรับสปอว์น container ต่อผู้เรียน)
+FROM quay.io/jupyterhub/jupyterhub:5
+RUN python3 -m pip install --no-cache-dir dockerspawner
+# config mount ผ่าน compose (แก้ได้โดยไม่ rebuild)

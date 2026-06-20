@@ -1,0 +1,22 @@
+# JupyterHub portal — ผู้เรียน 30 คน login → ได้ container/sandbox ของตัวเอง → เรียก vLLM :8000 กลาง
+# ใช้:
+#   docker build -f Dockerfile.singleuser -t dgx-singleuser:latest .
+#   docker compose up -d --build
+#   เปิด http://localhost:8888  (login: username อะไรก็ได้ + รหัส dgxspark2026)
+networks:
+  dgx-hub-net:
+    name: dgx-hub-net
+services:
+  jupyterhub:
+    build: { context: ., dockerfile: Dockerfile.hub }
+    image: dgx-jupyterhub:latest
+    container_name: dgx-jupyterhub
+    networks: [dgx-hub-net]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock                 # สปอว์น container ผู้เรียน
+      - ./jupyterhub_config.py:/srv/jupyterhub/jupyterhub_config.py:ro
+    ports: ["8888:8000"]      # :8000 ชนกับ vLLM → ใช้ :8888 บน host
+    environment:
+      ADMIN_TOKEN: dgxadmintoken123
+      WORKSHOP_PASSWORD: dgxspark2026
+    restart: unless-stopped

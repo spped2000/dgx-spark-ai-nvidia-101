@@ -1,0 +1,10 @@
+# Prometheus — scrape vLLM (NGC) Prometheus metrics ทุก 2 วิ
+# (= แหล่งเดียวกับที่ Triton/NIM expose; ที่นี่ scrape vLLM :8000 บน host)
+global:
+  scrape_interval: 2s
+  evaluation_interval: 2s
+scrape_configs:
+  - job_name: vllm
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:8000']   # vLLM NGC บน host

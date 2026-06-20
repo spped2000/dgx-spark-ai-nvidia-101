@@ -25,6 +25,10 @@
 | [labs/LAB5-policy-guide.md](labs/LAB5-policy-guide.md) | OpenShell policy & rules: `set` vs `update`, presets, L7 allow/deny + เดโมเพิ่มกฎสด |
 | [slides/](slides/) | **deck.pptx (76 สไลด์)** + deck.md (Marp) + slides.json + build_pptx.py |
 | [tools/](tools/) | sim_30_learners.py (load test) · dryrun-report*.md (ผลจริง) · run_dryrun.sh · **observability.md** · phoenix_*.py (live demos) |
+| [serving-stack.md](serving-stack.md) | เทียบ **vLLM · NIM · Triton · Ollama** (ตัวเลขจริง 30 คน) + เลือกตัวไหน + recipe |
+| [portal/](portal/) | **JupyterHub + DockerSpawner** — ผู้เรียน login ได้ sandbox/notebook ของตัวเอง → vLLM กลาง (:8888) |
+| [tools/monitoring/](tools/monitoring/) | **Triton-style dashboard** (Prometheus+Grafana :3001) "watch 30 of us live" |
+| [demo-runbook.md](demo-runbook.md) · [lab-tech-reference.md](lab-tech-reference.md) | สคริปต์เดโมสดต่อ lab + รายละเอียด tools/model/prompt |
 
 **ลำดับอ่านแนะนำสำหรับผู้สอน:** README → agenda → runbook → labs (1→5) → infra-setup-checklist → logistics
 

@@ -12,6 +12,10 @@ gh.token
 hf
 hf_token
 *.hftoken
+# NGC API key (for NIM — provided locally, NEVER commit)
+ngc
+ngc_key
+*.ngckey
 
 # python
 __pycache__/

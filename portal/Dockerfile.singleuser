@@ -1,0 +1,3 @@
+# Single-user sandbox ของผู้เรียนแต่ละคน (เบา CPU) — เรียก vLLM กลาง
+FROM quay.io/jupyter/minimal-notebook:latest
+RUN python3 -m pip install --no-cache-dir openai httpx
