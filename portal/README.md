@@ -19,7 +19,10 @@ docker compose up -d --build                                       # JupyterHub 
 ## provision 30 บัญชี
 - ใช้ **DummyAuthenticator**: แจกแค่ *username (student01..30)* + *รหัสรวม* (`WORKSHOP_PASSWORD`) — ใครพิมพ์ username อะไรก็ได้ container แยกตาม username
 - เปลี่ยนรหัส/หาผู้ดูแล: env `WORKSHOP_PASSWORD`, `ADMIN_TOKEN` ใน `docker-compose.yml`
-- โน้ตบุ๊ก lab: วางไฟล์ `.ipynb` ใน `portal/notebooks/` → mount เข้า `~/labs` ของทุกคน (read-only)
+- โน้ตบุ๊ก lab: อยู่ใน `portal/notebooks/` → mount เข้า `~/labs` ของทุกคน (read-only). ✅ ผู้เรียน **รันเอง no-code (Shift+Enter)**:
+  - `00_welcome` (LAB 1 แชต) · `01_lab2_reasoning` · `02_lab3_optimize_tokens` · `03_lab4_multiagent` — ทดสอบรันผ่านหมดในแซนด์บ็อกซ์ผู้เรียน
+  - `04_lab5_secure_watch` = LAB 5 **ดูผู้สอนสาธิต** (OpenShell ALPHA — ไม่แยก sandbox ต่อคน)
+  - แก้/เพิ่ม lab: วาง `.ipynb` ใน `portal/notebooks/` → spawn ใหม่เห็นทันที (ไม่ต้อง rebuild)
 
 ## ✅ Validated (จำลอง 5 คน)
 spawn student01..05 → container ขึ้นครบ 5/5 (healthy) · student01/03 เรียก vLLM ได้ ("2+2=4") · whoami/hostname แยกกันจริง → สเกล 30 ได้ (CPU เบา + GPU แชร์ตัวเดียว)
